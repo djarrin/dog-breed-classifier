@@ -13,20 +13,38 @@ import argparse
 
 #TODO: Import dependencies for Debugging andd Profiling
 
-def test(model, test_loader):
+def test(model, test_loader, hook):
     '''
     TODO: Complete this function that can take a model and a 
           testing data loader and will get the test accuray/loss of the model
           Remember to include any debugging/profiling hooks that you might need
     '''
-    pass
+    hook.set_mode(smd.modes.EVAL)
+    model.eval()
+    correct = 0
+    with torch.no_grad():
+    for data, target in test_loader:
+      data = data.view(data.shape[0], -1)
+      output = model(data)
+      pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
+      correct += pred.eq(target.view_as(pred)).sum().item()
 
-def train(model, train_loader, criterion, optimizer):
+    test_loss = len(test_loader.dataset)
+    test_accuracy = correct/test_loss
+    print(f'Test set: Accuracy: {test_accuracy} = {100*(test_accuracy)}%)')
+    
+    return test_accuracy, test_loss
+    
+
+    pass
+def train(model, train_loader, criterion, optimizer, hook):
     '''
     TODO: Complete this function that can take a model and
           data loaders for training and will get train the model
           Remember to include any debugging/profiling hooks that you might need
     '''
+    hook.set_mode(smd.modes.TRAIN)
+    model.train()
     pass
     
 def net():
@@ -48,6 +66,10 @@ def main(args):
     TODO: Initialize a model by calling the net function
     '''
     model=net()
+    
+    # Configure debugger
+    hook = smd.Hook.create_from_json_file()
+    hook.register_hook(model)
     
     '''
     TODO: Create your loss and optimizer

@@ -15,12 +15,13 @@ import torchvision.datasets as datasets
 
 import argparse
 
-def test(model, test_loader):
+def test(model, test_loader, criterion, device):
     '''
     TODO: Complete this function that can take a model and a 
           testing data loader and will get the test accuray/loss of the model
           Remember to include any debugging/profiling hooks that you might need
     '''
+    model = model.to(device)
     model.eval()
     correct = 0
     with torch.no_grad():
@@ -35,12 +36,13 @@ def test(model, test_loader):
     print(f'Test set: Accuracy: {test_accuracy} = {100*(test_accuracy)}%)')
     
 
-def train(model, train_loader, criterion, optimizer, epoch):
+def train(model, train_loader, criterion, optimizer, epoch, device):
     '''
     TODO: Complete this function that can take a model and
           data loaders for training and will get train the model
           Remember to include any debugging/profiling hooks that you might need
     '''
+    model = model.to(device)
     model.train()
     for e in range(epoch):
         running_loss=0
@@ -49,19 +51,30 @@ def train(model, train_loader, criterion, optimizer, epoch):
             data=data.to(device)
             target=target.to(device)
             optimizer.zero_grad()
-            pred = model(data)             #No need to reshape data since CNNs take image inputs
+            pred = model(data)   
+            
+       
+            data_np = data.cpu().numpy()
+            target_np = target.cpu().numpy()
+            pred_np = pred.cpu().detach().numpy()
+
+            print(f"Data shape: {data_np.shape}, Target shape: {target_np.shape}")
+            print(f"Data values: {data_np}")
+            print(f"Target values: {target_np}")
+            print(f"Predicted values: {pred_np}")
+            
             loss = criterion(pred, target)
             running_loss+=loss
             loss.backward()
             optimizer.step()
             pred=pred.argmax(dim=1, keepdim=True)
             correct += pred.eq(target.view_as(pred)).sum().item()
-    print(f"Epoch {e}")
+        print(f"Epoch {e}")
     
     print(f"average test loss: {running_loss/len(train_loader.dataset)}")
     print(f"Accuracy {100*(correct/len(train_loader.dataset))}%")
 
-def net():
+def net(num_classes):
     '''
     TODO: Complete this function that initializes your model
           Remember to use a pretrained model
@@ -74,7 +87,7 @@ def net():
     num_features=model.fc.in_features
     
     model.fc = nn.Sequential(
-                   nn.Linear(num_features, 10)
+                   nn.Linear(num_features, num_classes)
     )
     
     return model
@@ -91,10 +104,36 @@ def create_data_loaders(data, batch_size):
     )
 
 def main(args):
+    
+    # Download and load the training data
+    training_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+
+    testing_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+        
+    ])
+
+    trainset = datasets.ImageFolder(root=os.environ['SM_CHANNEL_TRAIN'], transform=training_transform)
+    testset = datasets.ImageFolder(root=os.environ['SM_CHANNEL_TEST'], transform=testing_transform)
+    train_loader = create_data_loaders(data=trainset, batch_size=args.batch_size)
+    test_loader = create_data_loaders(data=testset, batch_size=args.batch_size)
+    
+    # Access the shape of the first data sample
+    num_classes = len(trainset.classes)
+    
+    print("Number of classes:", num_classes)
+    
     '''
     TODO: Initialize a model by calling the net function
     '''
-    model=net()
+    model=net(num_classes)
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"Running on Device {device}")
@@ -108,35 +147,17 @@ def main(args):
     loss_criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.fc.parameters(), lr=args.learningRate)
 
-    
-    # Download and load the training data
-    training_transform = transforms.Compose([
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.Normalize((0.1307,), (0.3081,)),
-        transforms.ToTensor()
-    ])
-
-    testing_transform = transforms.Compose([
-        transforms.Normalize((0.1307,), (0.3081,)),
-        transforms.ToTensor()
-    ])
-
-    s3_bucket = "s3://dog-classifier/data/dogImages"
-    trainset = datasets.ImageFolder(root=os.path.join(s3_bucket, "train"), transform=training_transform)
-    testset = datasets.ImageFolder(root=os.path.join(s3_bucket, "test"), transform=testing_transform)
-    train_loader = create_data_loaders(data=trainset, batch_size=args.batch_size)
-    test_loader = create_data_loaders(data=testset, batch_size=args.batch_size)
 
     '''
     TODO: Call the train function to start training your model
     Remember that you will need to set up a way to get training data from S3
     '''
-    model=train(model, train_loader, loss_criterion, optimizer, args.epochs)
+    model=train(model, train_loader, loss_criterion, optimizer, args.epochs, device)
     
     '''
     TODO: Test the model to see its accuracy
     '''
-    test(model, test_loader, criterion, hook)
+    test(model, test_loader, criterion, device)
     
     '''
     TODO: Save the trained model

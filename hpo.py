@@ -9,6 +9,9 @@ import torchvision
 import torchvision.models as models
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
+from PIL import ImageFile
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 # from sagemaker.debugger import Rule, DebuggerHookConfig
 
@@ -22,18 +25,35 @@ def test(model, test_loader, criterion, device):
           Remember to include any debugging/profiling hooks that you might need
     '''
     model = model.to(device)
-    model.eval()
-    correct = 0
-    with torch.no_grad():
-        for data, target in test_loader:
-            data = data.view(data.shape[0], -1)
-            output = model(data)
-            pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
-            correct += pred.eq(target.view_as(pred)).sum().item()
+#     model.eval()
+#     correct = 0
+#     with torch.no_grad():
+#         for data, target in test_loader:
+#             data = data.view(data.shape[0], -1)
+#             output = model(data)
+#             pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
+#             correct += pred.eq(target.view_as(pred)).sum().item()
 
-    test_loss = len(test_loader.dataset)
-    test_accuracy = correct/test_loss
-    print(f'Test set: Accuracy: {test_accuracy} = {100*(test_accuracy)}%)')
+#     test_loss = len(test_loader.dataset)
+#     test_accuracy = correct/test_loss
+#     print(f'Test set: Accuracy: {test_accuracy} = {100*(test_accuracy)}%)')
+    model.eval()
+    running_loss=0
+    running_corrects=0
+    
+    for inputs, labels in test_loader:
+        outputs=model(inputs)
+        loss=criterion(outputs, labels)
+        _, preds = torch.max(outputs, 1)
+        running_loss += loss.item() * inputs.size(0)
+        running_corrects += torch.sum(preds == labels.data).item()
+
+    total_loss = running_loss / len(test_loader)
+    total_acc = running_corrects / len(test_loader.dataset)
+    
+    print(f"Test => total loss: {total_loss}")
+    print(f"Test => Test Accuracry: {total_acc}")
+          
     
 
 def train(model, train_loader, criterion, optimizer, epoch, device):
@@ -51,18 +71,7 @@ def train(model, train_loader, criterion, optimizer, epoch, device):
             data=data.to(device)
             target=target.to(device)
             optimizer.zero_grad()
-            pred = model(data)   
-            
-       
-            data_np = data.cpu().numpy()
-            target_np = target.cpu().numpy()
-            pred_np = pred.cpu().detach().numpy()
-
-            print(f"Data shape: {data_np.shape}, Target shape: {target_np.shape}")
-            print(f"Data values: {data_np}")
-            print(f"Target values: {target_np}")
-            print(f"Predicted values: {pred_np}")
-            
+            pred = model(data)               
             loss = criterion(pred, target)
             running_loss+=loss
             loss.backward()
@@ -73,6 +82,9 @@ def train(model, train_loader, criterion, optimizer, epoch, device):
     
     print(f"average test loss: {running_loss/len(train_loader.dataset)}")
     print(f"Accuracy {100*(correct/len(train_loader.dataset))}%")
+    
+    return model
+
 
 def net(num_classes):
     '''
@@ -93,15 +105,13 @@ def net(num_classes):
     return model
 
 def create_data_loaders(data, batch_size):
-    '''
-    This is an optional function that you may or may not need to implement
-    depending on whether you need to use data loaders or not
-    '''
+                
     return torch.utils.data.DataLoader(
         data,
         batch_size=batch_size,
         shuffle=True
     )
+
 
 def main(args):
     
@@ -157,12 +167,12 @@ def main(args):
     '''
     TODO: Test the model to see its accuracy
     '''
-    test(model, test_loader, criterion, device)
+    test(model, test_loader, loss_criterion, device)
     
     '''
     TODO: Save the trained model
     '''
-    torch.save(model, path)
+    torch.save(model, 'model.pt')
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()

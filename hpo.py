@@ -25,18 +25,7 @@ def test(model, test_loader, criterion, device):
           Remember to include any debugging/profiling hooks that you might need
     '''
     model = model.to(device)
-#     model.eval()
-#     correct = 0
-#     with torch.no_grad():
-#         for data, target in test_loader:
-#             data = data.view(data.shape[0], -1)
-#             output = model(data)
-#             pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
-#             correct += pred.eq(target.view_as(pred)).sum().item()
 
-#     test_loss = len(test_loader.dataset)
-#     test_accuracy = correct/test_loss
-#     print(f'Test set: Accuracy: {test_accuracy} = {100*(test_accuracy)}%)')
     model.eval()
     running_loss=0
     running_corrects=0

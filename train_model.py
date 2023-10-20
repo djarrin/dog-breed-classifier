@@ -25,12 +25,15 @@ def test(model, test_loader, criterion, device, hook):
     model = model.to(device)
 
     model.eval()
-    hook.set_mode(smd.modes.EVAL)
+    hook.set_mode(modes.EVAL)
     
     running_loss=0
     running_corrects=0
     
     for inputs, labels in test_loader:
+        inputs = inputs.to(device)  
+        labels = labels.to(device)
+        
         outputs=model(inputs)
         loss=criterion(outputs, labels)
         _, preds = torch.max(outputs, 1)
@@ -48,7 +51,9 @@ def test(model, test_loader, criterion, device, hook):
 def train(model, train_loader, criterion, optimizer, epoch, device, hook):
     model = model.to(device)
     model.train()
-    hook.set_mode(smd.modes.TRAIN)
+    hook.set_mode(modes.TRAIN)
+    hook.register_loss(criterion)
+    
     for e in range(epoch):
         running_loss=0
         correct=0
@@ -128,7 +133,7 @@ def main(args):
 
     model=net(num_classes)
     
-    hook = smd.Hook.create_from_json_file()
+    hook = get_hook(create_if_not_exists=True)
     hook.register_hook(model)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

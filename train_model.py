@@ -20,15 +20,13 @@ from smdebug.pytorch import get_hook
 
 import argparse
 
-def test(model, test_loader, criterion, device):
-    '''
-    TODO: Complete this function that can take a model and a 
-          testing data loader and will get the test accuray/loss of the model
-          Remember to include any debugging/profiling hooks that you might need
-    '''
+def test(model, test_loader, criterion, device, hook):  
+        
     model = model.to(device)
 
     model.eval()
+    hook.set_mode(smd.modes.EVAL)
+    
     running_loss=0
     running_corrects=0
     
@@ -47,14 +45,10 @@ def test(model, test_loader, criterion, device):
           
     
 
-def train(model, train_loader, criterion, optimizer, epoch, device):
-    '''
-    TODO: Complete this function that can take a model and
-          data loaders for training and will get train the model
-          Remember to include any debugging/profiling hooks that you might need
-    '''
+def train(model, train_loader, criterion, optimizer, epoch, device, hook):
     model = model.to(device)
     model.train()
+    hook.set_mode(smd.modes.TRAIN)
     for e in range(epoch):
         running_loss=0
         correct=0
@@ -131,11 +125,12 @@ def main(args):
     
     print("Number of classes:", num_classes)
     
-    '''
-    TODO: Initialize a model by calling the net function
-    '''
+
     model=net(num_classes)
     
+    hook = smd.Hook.create_from_json_file()
+    hook.register_hook(model)
+
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"Running on Device {device}")
     
@@ -153,12 +148,12 @@ def main(args):
     TODO: Call the train function to start training your model
     Remember that you will need to set up a way to get training data from S3
     '''
-    model=train(model, train_loader, loss_criterion, optimizer, args.epochs, device)
+    model=train(model, train_loader, loss_criterion, optimizer, args.epochs, device, hook)
     
     '''
     TODO: Test the model to see its accuracy
     '''
-    test(model, test_loader, loss_criterion, device)
+    test(model, test_loader, loss_criterion, device, hook)
     
     '''
     TODO: Save the trained model
@@ -189,6 +184,12 @@ if __name__=='__main__':
         default=0.01
     )
     
+    parser.add_argument(
+        "--gpu",
+        type=str2bool,
+        default=True
+    )
+
     args=parser.parse_args()
     
     main(args)

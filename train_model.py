@@ -163,7 +163,7 @@ def main(args):
     '''
     TODO: Save the trained model
     '''
-    torch.save(model, 'model.pt')
+    torch.save(model, '/dog-breed-classifier/dog_breed_classifier.pth')
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()

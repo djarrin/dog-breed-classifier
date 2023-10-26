@@ -25,7 +25,9 @@ def test(model, test_loader, criterion, device, hook):
     model = model.to(device)
 
     model.eval()
-    hook.set_mode(modes.EVAL)
+    
+    if hook:
+        hook.set_mode(modes.EVAL)
     
     running_loss=0
     running_corrects=0
@@ -51,8 +53,9 @@ def test(model, test_loader, criterion, device, hook):
 def train(model, train_loader, criterion, optimizer, epoch, device, hook):
     model = model.to(device)
     model.train()
-    hook.set_mode(modes.TRAIN)
-    hook.register_loss(criterion)
+    if hook:
+        hook.set_mode(modes.TRAIN)
+        hook.register_loss(criterion)
     
     for e in range(epoch):
         running_loss=0
@@ -133,8 +136,10 @@ def main(args):
 
     model=net(num_classes)
     
-    hook = get_hook(create_if_not_exists=True)
-    hook.register_hook(model)
+    hook = False
+    if args.debug:
+        hook = get_hook(create_if_not_exists=True)
+        hook.register_hook(model)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"Running on Device {device}")
@@ -163,7 +168,7 @@ def main(args):
     '''
     TODO: Save the trained model
     '''
-    torch.save(model, '/dog-breed-classifier/dog_breed_classifier.pth')
+    torch.save(model, '/opt/ml/model/model.pt')
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()
@@ -193,6 +198,12 @@ if __name__=='__main__':
         "--gpu",
         type=str2bool,
         default=True
+    )
+    
+    parser.add_argument(
+        "--debug",
+        type=str2bool,
+        default=False
     )
 
     args=parser.parse_args()

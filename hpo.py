@@ -161,7 +161,7 @@ def main(args):
     '''
     TODO: Save the trained model
     '''
-    torch.save(model, '/opt/ml/model/model.pt')
+    torch.save(model.state_dict(), '/opt/ml/model/model.pt')
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()

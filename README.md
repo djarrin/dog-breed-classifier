@@ -25,6 +25,15 @@ Results of the profiling of the model can be found in ProfilerReport/profiler-ou
 
 
 ## Model Deployment
-**TODO**: Give an overview of the deployed model and instructions on how to query the endpoint with a sample input.
+As you can see in the notebook in order to use the endpoint you simply need to open the image and feed it to the endpoints .predict function like so:
+```
+with open("./data/dogImages/sample_dog.jpg", "rb") as f:
+    image = f.read()
+    display(Image.open(io.BytesIO(image)))
+    response = predictor.predict(image, initial_args={"ContentType": "image/jpeg"})
+    print(f"Response: {response}")
+    dog_breed = np.argmax(response, 1) + 1
+```
+Where dog_breed will be the predicted class of dog (the name can be seen by looking at the classes in the dataset.
 
-**TODO** Remember to provide a screenshot of the deployed active endpoint in Sagemaker.
+![Endpoint Deployment](endpoint-deployment.png)

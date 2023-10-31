@@ -19,11 +19,6 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 import argparse
 
 def test(model, test_loader, criterion, device):
-    '''
-    TODO: Complete this function that can take a model and a 
-          testing data loader and will get the test accuray/loss of the model
-          Remember to include any debugging/profiling hooks that you might need
-    '''
     model = model.to(device)
 
     model.eval()
@@ -46,11 +41,6 @@ def test(model, test_loader, criterion, device):
     
 
 def train(model, train_loader, criterion, optimizer, epoch, device):
-    '''
-    TODO: Complete this function that can take a model and
-          data loaders for training and will get train the model
-          Remember to include any debugging/profiling hooks that you might need
-    '''
     model = model.to(device)
     model.train()
     for e in range(epoch):
@@ -76,10 +66,6 @@ def train(model, train_loader, criterion, optimizer, epoch, device):
 
 
 def net(num_classes):
-    '''
-    TODO: Complete this function that initializes your model
-          Remember to use a pretrained model
-    '''
     model = models.resnet18(pretrained=True)
 
     for param in model.parameters():
@@ -130,7 +116,7 @@ def main(args):
     print("Number of classes:", num_classes)
     
     '''
-    TODO: Initialize a model by calling the net function
+    Initialize a model by calling the net function
     '''
     model=net(num_classes)
     
@@ -139,35 +125,27 @@ def main(args):
     
     model=model.to(device)
 
-    
-    '''
-    TODO: Create your loss and optimizer
-    '''
     loss_criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.fc.parameters(), lr=args.learningRate)
 
 
     '''
-    TODO: Call the train function to start training your model
-    Remember that you will need to set up a way to get training data from S3
+    Call the train function to start training your model
     '''
     model=train(model, train_loader, loss_criterion, optimizer, args.epochs, device)
     
     '''
-    TODO: Test the model to see its accuracy
+    Test the model to see its accuracy
     '''
     test(model, test_loader, loss_criterion, device)
     
     '''
-    TODO: Save the trained model
+    Save the trained model
     '''
     torch.save(model.state_dict(), '/opt/ml/model/model.pt')
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()
-    '''
-    TODO: Specify all the hyperparameters you need to use to train your model.
-    '''
     
     parser.add_argument(
         "--batch-size",

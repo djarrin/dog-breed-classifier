@@ -1,41 +1,30 @@
 # Image Classification using AWS SageMaker
 
-Use AWS Sagemaker to train a pretrained model that can perform image classification by using the Sagemaker profiling, debugger, hyperparameter tuning and other good ML engineering practices. This can be done on either the provided dog breed classication data set or one of your choice.
+This project is an excercise in tunning a pretrained ResNet18 model off of a provided data set using hyperparameter tunning, debugging and profiling within the AWS echo system.  
 
 ## Project Set Up and Installation
-Enter AWS through the gateway in the course and open SageMaker Studio. 
-Download the starter files.
-Download/Make the dataset available. 
+Within an AWS env, setup a sagemaker instance and clone this project, from there you should be able to run each of the cells within train_and_deploy.ipynd and you should be able to reproduce results to a reasonable standard.
 
 ## Dataset
-The provided dataset is the dogbreed classification dataset which can be found in the classroom.
-The project is designed to be dataset independent so if there is a dataset that is more interesting or relevant to your work, you are welcome to use it to complete the project.
+The provided dataset is the dogbreed classification dataset.
 
-### Access
-Upload the data to an S3 bucket through the AWS Gateway so that SageMaker has access to the data. 
 
 ## Hyperparameter Tuning
-What kind of model did you choose for this experiment and why? Give an overview of the types of parameters and their ranges used for the hyperparameter search
+In this section I am setting up the hyper parameter tunning job. I have decided to tune based on learning rate, batch size and the number of epochs the training job should run through (and defining the ranges that the job should search by). The job optomizes primarily upon the average test loss. The training functions along with the logs that the tunning job will optomize upon are produced by the hpo.py script file.
 
-Remember that your README should:
-- Include a screenshot of completed training jobs
-- Logs metrics during the training process
-- Tune at least two hyperparameters
-- Retrieve the best best hyperparameters from all your training jobs
+The screenshots of completed tunning jobs can be found here:
+![Tunning Job 1](completed-hyperparameter-tunning-job.png)
+![Tunning Job 2](tunning-job-best-parameters.png)
+
 
 ## Debugging and Profiling
-**TODO**: Give an overview of how you performed model debugging and profiling in Sagemaker
+After looking over the profiling report it was suggested a good way to improve results was to increase batch size. 
 
 ### Results
-**TODO**: What are the results/insights did you get by profiling/debugging your model?
-
-**TODO** Remember to provide the profiler html/pdf file in your submission.
+Results of the profiling of the model can be found in ProfilerReport/profiler-output/profiler-report.html
 
 
 ## Model Deployment
 **TODO**: Give an overview of the deployed model and instructions on how to query the endpoint with a sample input.
 
 **TODO** Remember to provide a screenshot of the deployed active endpoint in Sagemaker.
-
-## Standout Suggestions
-**TODO (Optional):** This is where you can provide information about any standout suggestions that you have attempted.
